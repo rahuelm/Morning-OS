@@ -1,227 +1,85 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Morning OS</title>
-
-<style>
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Arial;
-  background: #0f0f10;
-  color: white;
-}
-
-.container {
-  padding: 20px;
-}
-
-h1 {
-  font-size: 26px;
-  margin-bottom: 5px;
-}
-
-.card {
-  background: #1c1c1e;
-  border-radius: 16px;
-  padding: 15px;
-  margin-top: 15px;
-}
-
-input, select {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  border-radius: 10px;
-  border: none;
-  background: #2c2c2e;
-  color: white;
-}
-
-button {
-  width: 100%;
-  padding: 14px;
-  margin-top: 15px;
-  border-radius: 12px;
-  border: none;
-  background: #4f7cff;
-  color: white;
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.mode {
-  font-size: 18px;
-  margin-bottom: 5px;
-}
-
-.timer {
-  opacity: 0.7;
-  margin-bottom: 10px;
-}
-
-.stepBox {
-  font-size: 20px;
-  margin: 20px 0;
-}
-
-.progress {
-  height: 6px;
-  background: #2c2c2e;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: #4f7cff;
-  width: 0%;
-}
-
-.tip {
-  margin-top: 10px;
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>🌅 Morning OS</h1>
-<p style="opacity:0.6;">Tap → follow → done</p>
-
-<div class="card">
-
-<label>Leave Time</label>
-<input type="time" id="leave">
-
-<label>Lara Bathroom Risk</label>
-<select id="lara">
-<option value="no">No</option>
-<option value="yes">Yes</option>
-</select>
-
-<label>Running Late?</label>
-<select id="late">
-<option value="no">No</option>
-<option value="yes">Yes</option>
-</select>
-
-<button onclick="generate()">Start Morning</button>
-
-</div>
-
-<div class="card" id="app" style="display:none;">
-
-<div class="mode" id="mode"></div>
-<div class="timer" id="timer"></div>
-
-<div class="progress">
-<div class="progress-bar" id="bar"></div>
-</div>
-
-<div class="stepBox" id="step"></div>
-
-<button onclick="nextStep()">Next ➜</button>
-
-<div class="tip" id="tip"></div>
-
-</div>
-
-</div>
-
 <script>
-
-let steps = [];
-let current = 0;
 
 function generate() {
 
-  const leave = document.getElementById("leave").value || "08:30";
+  const leave = document.getElementById("leave").value;
   const lara = document.getElementById("lara").value;
-  const late = document.getElementById("late").value;
 
-  const now = new Date();
-  const leaveTime = new Date();
-
-  const [h,m] = leave.split(":");
-  leaveTime.setHours(h,m,0,0);
-
-  const mins = Math.floor((leaveTime - now)/60000);
-
-  let mode = "";
-  let tip = "";
-
-  if (late === "yes" || lara === "yes" || mins < 60) {
-    mode = "🔴 Rush Mode";
-    steps = [
-      "🚽 Bathroom FIRST",
-      "☕ Coffee + feed cats",
-      "🎒 Prep bag",
-      "🚪 Leave ASAP"
-    ];
-    tip = "Skip anything non-essential. Survival mode activated.";
+  if (!leave || !lara) {
+    alert("Please enter all times");
+    return;
   }
 
-  else if (mins < 90) {
-    mode = "🔵 Normal Mode";
-    steps = [
-      "☕ Kitchen batch (coffee + cats + meds)",
-      "🚽 Bathroom routine",
-      "🧹 Quick tidy if time",
-      "🚪 Leave"
-    ];
-    tip = "Steady pace. Stay efficient.";
+  function toMinutes(time) {
+    const [h,m] = time.split(":").map(Number);
+    return h*60 + m;
   }
 
-  else {
-    mode = "🟢 Relaxed Mode";
-    steps = [
-      "☕ Kitchen batch + coffee",
-      "🚽 Full bathroom routine",
-      "🍽️ Extra kitchen tasks",
-      "🏠 House tidy",
-      "🐱 Litter + living room",
-      "🚪 Final prep"
-    ];
-    tip = "You’ve got time. Optimise for comfort.";
+  function toTime(mins) {
+    let h = Math.floor(mins/60);
+    let m = mins % 60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 
-  current = 0;
+  const leaveMin = toMinutes(leave);
+  const laraMin = toMinutes(lara);
 
-  document.getElementById("app").style.display = "block";
-  document.getElementById("mode").innerText = mode;
-  document.getElementById("timer").innerText = "⏱️ " + mins + " mins left";
-  document.getElementById("tip").innerText = tip;
+  // ⏱ YOUR TASK TIMES (from your spreadsheet)
+  const coffee = 5;
+  const feedCats = 1;
+  const cleanBowls = 2;
+  const bathroomCore = 20; // realistic minimum block
 
-  update();
-}
+  const preLaraTotal = coffee + feedCats + cleanBowls + bathroomCore;
 
-function update() {
+  // 🧠 Calculate wake time
+  const wakeTime = laraMin - preLaraTotal;
 
-  document.getElementById("step").innerText = steps[current];
+  let schedule = [];
 
-  const progress = ((current+1)/steps.length)*100;
-  document.getElementById("bar").style.width = progress + "%";
-}
+  let current = wakeTime;
 
-function nextStep() {
+  // BEFORE LARA
+  schedule.push(`${toTime(current)} → Wake up`);
+  
+  current += 2;
+  schedule.push(`${toTime(current)} → Make coffee + feed cats`);
+  
+  current += 6;
+  schedule.push(`${toTime(current)} → Clean bowls`);
+  
+  current += cleanBowls;
+  schedule.push(`${toTime(current)} → Bathroom routine`);
+  
+  current += bathroomCore;
+  schedule.push(`${toTime(current)} → Finish before Lara wakes`);
 
-  if (current < steps.length - 1) {
-    current++;
-    update();
-  } else {
-    document.getElementById("step").innerText = "🏁 You’re ready. Let’s go.";
+  // LARA WAKE POINT
+  schedule.push(`\n${toTime(laraMin)} → Lara wakes`);
+
+  current = laraMin;
+
+  // AFTER LARA (free mode)
+  schedule.push(`${toTime(current)} → Kitchen tasks (washing up etc)`);
+
+  current += 10;
+  schedule.push(`${toTime(current)} → Living room tidy + litter`);
+
+  current += 6;
+  schedule.push(`${toTime(current)} → Bed + curtains`);
+
+  current += 3;
+
+  // FINAL BUFFER
+  if (current < leaveMin) {
+    schedule.push(`${toTime(current)} → Free time / extra tidy`);
   }
+
+  schedule.push(`\n${toTime(leaveMin)} → Leave house`);
+
+  // OUTPUT
+  document.getElementById("output").innerHTML =
+    "<h2>🧠 Your Morning Plan</h2><pre>" + schedule.join("\n") + "</pre>";
 }
 
 </script>
-
-</body>
-</html>
