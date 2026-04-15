@@ -1,28 +1,67 @@
-<script>
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning OS</title>
 
+<style>
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #111;
+  color: white;
+}
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+pre {
+  white-space: pre-wrap;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🌅 Morning Planner</h1>
+
+<label>Leave Time:</label>
+<input type="time" id="leave">
+
+<label>Lara Wake Time:</label>
+<input type="time" id="lara">
+
+<button onclick="generate()">Generate Plan</button>
+
+<div id="output" style="margin-top:20px;"></div>
+
+<script>
 function generate() {
 
   const leave = document.getElementById("leave").value;
   const lara = document.getElementById("lara").value;
 
   if (!leave || !lara) {
-    alert("Enter all times");
+    alert("Please enter both times");
     return;
   }
 
-  function toMin(t){
-    const [h,m] = t.split(":").map(Number);
-    return h*60+m;
+  function toMin(t) {
+    const parts = t.split(":");
+    return Number(parts[0]) * 60 + Number(parts[1]);
   }
 
-  function toTime(m){
-    return String(Math.floor(m/60)).padStart(2,'0') + ":" + String(m%60).padStart(2,'0');
+  function toTime(m) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    return (h < 10 ? "0" : "") + h + ":" + (min < 10 ? "0" : "") + min;
   }
 
   const leaveMin = toMin(leave);
   const laraMin = toMin(lara);
 
-  // ⏱ BLOCK TIMES
+  // TASK TIMES
   const wakeBlock = 13;
   const bathroom = 39;
   const kitchenExtra = 14;
@@ -31,74 +70,60 @@ function generate() {
 
   const requiredBeforeLara = wakeBlock + bathroom;
 
-  let schedule = [];
-
-  // 🧠 Calculate wake time
   const wakeTime = laraMin - requiredBeforeLara;
 
   let current = wakeTime;
+  let schedule = [];
 
-  schedule.push(`${toTime(current)} → Wake up`);
+  schedule.push(toTime(current) + " → Wake up");
 
-  // 🔵 Wake block
-  current += 2;
-  schedule.push(`${toTime(current)} → Morning wee`);
+  // Wake block
+  schedule.push(toTime(current += 2) + " → Morning wee");
+  schedule.push(toTime(current += 2) + " → Make coffee");
+  schedule.push(toTime(current += 5) + " → Coffee + feed cats + bowls + bag");
 
-  current += 2;
-  schedule.push(`${toTime(current)} → Make coffee`);
-
-  current += 5;
-  schedule.push(`${toTime(current)} → Drink coffee + feed cats + clean bowls + prep bag`);
-
-  // DECISION POINT
   const timeBeforeLara = laraMin - current;
 
-  // 🧠 LOGIC: can we fit extra kitchen BEFORE bathroom?
   if (timeBeforeLara >= (bathroom + kitchenExtra)) {
-
-    schedule.push(`\n🧠 Enough time → do EXTRA KITCHEN FIRST`);
-
-    schedule.push(`${toTime(current)} → Extra kitchen tasks`);
+    schedule.push("→ Do EXTRA kitchen tasks first");
+    schedule.push(toTime(current) + " → Kitchen extras");
     current += kitchenExtra;
-
   } else {
-    schedule.push(`\n⚠️ Go straight to bathroom (Lara timing constraint)`);
+    schedule.push("→ Go straight to bathroom");
   }
 
-  // 🟣 Bathroom block
-  schedule.push(`${toTime(current)} → Bathroom routine`);
+  schedule.push(toTime(current) + " → Bathroom routine");
   current += bathroom;
 
-  schedule.push(`${toTime(current)} → Finished before Lara`);
+  schedule.push(toTime(current) + " → Done before Lara");
 
-  // LARA WAKE
-  schedule.push(`\n${toTime(laraMin)} → Lara wakes`);
+  schedule.push("");
+  schedule.push(toTime(laraMin) + " → Lara wakes");
 
   current = Math.max(current, laraMin);
 
-  // AFTER LARA → do remaining tasks
   if (timeBeforeLara < (bathroom + kitchenExtra)) {
-    schedule.push(`${toTime(current)} → Extra kitchen tasks`);
+    schedule.push(toTime(current) + " → Kitchen extras");
     current += kitchenExtra;
   }
 
-  // House + living
-  schedule.push(`${toTime(current)} → House tasks`);
+  schedule.push(toTime(current) + " → House tasks");
   current += house;
 
-  schedule.push(`${toTime(current)} → Living room tasks`);
+  schedule.push(toTime(current) + " → Living room");
   current += living;
 
-  // BUFFER
   if (current < leaveMin) {
-    schedule.push(`${toTime(current)} → Free time / chill`);
+    schedule.push(toTime(current) + " → Free time");
   }
 
-  schedule.push(`\n${toTime(leaveMin)} → Leave house`);
+  schedule.push("");
+  schedule.push(toTime(leaveMin) + " → Leave house");
 
-  // OUTPUT
   document.getElementById("output").innerHTML =
-    "<h2>🧠 Your Optimised Morning</h2><pre>" + schedule.join("\n") + "</pre>";
+    "<pre>" + schedule.join("\n") + "</pre>";
 }
-
 </script>
+
+</body>
+</html>
