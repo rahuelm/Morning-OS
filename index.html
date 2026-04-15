@@ -1,3 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning OS</title>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 20px;
+  background: #111;
+  color: white;
+}
+input, button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Morning Planner</h1>
+
+<label>Leave Time:</label>
+<input type="time" id="leave">
+
+<label>Lara Wake Time:</label>
+<input type="time" id="lara">
+
+<button onclick="generate()">Generate Plan</button>
+
+<div id="output" style="margin-top:20px;"></div>
+
 <script>
 
 function generate() {
@@ -6,80 +41,56 @@ function generate() {
   const lara = document.getElementById("lara").value;
 
   if (!leave || !lara) {
-    alert("Please enter all times");
+    alert("Enter all times");
     return;
   }
 
-  function toMinutes(time) {
-    const [h,m] = time.split(":").map(Number);
+  function toMinutes(t) {
+    const [h,m] = t.split(":").map(Number);
     return h*60 + m;
   }
 
-  function toTime(mins) {
-    let h = Math.floor(mins/60);
-    let m = mins % 60;
-    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  function toTime(m) {
+    return String(Math.floor(m/60)).padStart(2,'0') + ":" + String(m%60).padStart(2,'0');
   }
 
   const leaveMin = toMinutes(leave);
   const laraMin = toMinutes(lara);
 
-  // ⏱ YOUR TASK TIMES (from your spreadsheet)
-  const coffee = 5;
-  const feedCats = 1;
-  const cleanBowls = 2;
-  const bathroomCore = 20; // realistic minimum block
+  const totalBefore = 28; // rough time needed before Lara
 
-  const preLaraTotal = coffee + feedCats + cleanBowls + bathroomCore;
-
-  // 🧠 Calculate wake time
-  const wakeTime = laraMin - preLaraTotal;
+  let wake = laraMin - totalBefore;
+  let current = wake;
 
   let schedule = [];
 
-  let current = wakeTime;
+  schedule.push(toTime(current) + " Wake up");
 
-  // BEFORE LARA
-  schedule.push(`${toTime(current)} → Wake up`);
-  
-  current += 2;
-  schedule.push(`${toTime(current)} → Make coffee + feed cats`);
-  
-  current += 6;
-  schedule.push(`${toTime(current)} → Clean bowls`);
-  
-  current += cleanBowls;
-  schedule.push(`${toTime(current)} → Bathroom routine`);
-  
-  current += bathroomCore;
-  schedule.push(`${toTime(current)} → Finish before Lara wakes`);
+  current += 5;
+  schedule.push(toTime(current) + " Coffee + feed cats");
 
-  // LARA WAKE POINT
-  schedule.push(`\n${toTime(laraMin)} → Lara wakes`);
+  current += 3;
+  schedule.push(toTime(current) + " Clean bowls");
+
+  current += 20;
+  schedule.push(toTime(current) + " Bathroom");
+
+  schedule.push("\n" + toTime(laraMin) + " Lara wakes");
 
   current = laraMin;
 
-  // AFTER LARA (free mode)
-  schedule.push(`${toTime(current)} → Kitchen tasks (washing up etc)`);
+  schedule.push(toTime(current) + " Kitchen tidy");
 
   current += 10;
-  schedule.push(`${toTime(current)} → Living room tidy + litter`);
+  schedule.push(toTime(current) + " Living room tidy");
 
-  current += 6;
-  schedule.push(`${toTime(current)} → Bed + curtains`);
+  schedule.push("\n" + toTime(leaveMin) + " Leave house");
 
-  current += 3;
-
-  // FINAL BUFFER
-  if (current < leaveMin) {
-    schedule.push(`${toTime(current)} → Free time / extra tidy`);
-  }
-
-  schedule.push(`\n${toTime(leaveMin)} → Leave house`);
-
-  // OUTPUT
   document.getElementById("output").innerHTML =
-    "<h2>🧠 Your Morning Plan</h2><pre>" + schedule.join("\n") + "</pre>";
+    "<pre>" + schedule.join("\n") + "</pre>";
 }
 
 </script>
+
+</body>
+</html>
